@@ -1,7 +1,10 @@
 use anyhow::{Result, bail};
+use ast::ASTNode;
 use log::{debug, info};
 use regex::Regex;
 use std::collections::HashMap;
+
+mod ast;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone)]
 pub struct Token {
@@ -31,6 +34,10 @@ pub fn parse(contents: &mut String) -> Result<()> {
     info!("Successfully parsed {} tokens.", tokens.len());
 
     Ok(())
+}
+
+fn generate_ast(tokens: Vec<Token>) -> ASTNode {
+    todo!();
 }
 
 fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
