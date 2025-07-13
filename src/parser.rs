@@ -1,5 +1,5 @@
 use anyhow::{Result, bail};
-use log::debug;
+use log::{debug, info};
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -26,7 +26,14 @@ enum TokenType {
     Comment,
 }
 
-pub fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
+pub fn parse(contents: &mut String) -> Result<()> {
+    let tokens = tokenize(contents)?;
+    info!("Successfully parsed {} tokens.", tokens.len());
+
+    Ok(())
+}
+
+fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
     let mut regexps: HashMap<TokenType, Regex> = HashMap::new();
     regexps.insert(TokenType::OpenParen, Regex::new(r"\(").unwrap());
     regexps.insert(TokenType::CloseParen, Regex::new(r"\)").unwrap());

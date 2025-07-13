@@ -1,6 +1,8 @@
 use log::{Level, Metadata, Record};
 
-pub static LOGGER: Logger = Logger{log_level: Level::Debug};
+pub static LOGGER: Logger = Logger {
+    log_level: Level::Debug,
+};
 
 pub struct Logger {
     log_level: Level,
