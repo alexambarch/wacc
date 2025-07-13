@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
 use clap::Parser;
-use regex::Regex;
+use regex::{Regex, RegexSetBuilder};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,7 +8,7 @@ use std::io::prelude::*;
 #[derive(PartialEq, Eq, Hash, Default, Clone)]
 struct Token {
     ttype: TokenType,
-    value: String
+    value: String,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Default)]
@@ -43,11 +43,11 @@ struct Args {
     codegen: bool,
 
     /// The source file to compile
-    #[arg(value_name="file")]
-    filename: String
+    #[arg(value_name = "file")]
+    filename: String,
 }
 
-fn main() -> Result<()>{
+fn main() -> Result<()> {
     let args = Args::parse();
     let _early_exit = args.lex || args.parse || args.codegen;
 
@@ -67,18 +67,22 @@ fn read_file(filename: String) -> Result<String> {
     Ok(contents)
 }
 
+// TODO Check whether Ident matches Keyword for edge case
 fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
     let mut regexps: HashMap<TokenType, Regex> = HashMap::new();
     regexps.insert(TokenType::OpenParen, Regex::new(r"\(").unwrap());
     regexps.insert(TokenType::CloseParen, Regex::new(r"\)").unwrap());
-    regexps.insert(TokenType::OpenBrace, Regex::new(r"{").unwrap());
-    regexps.insert(TokenType::CloseBrace, Regex::new(r"}").unwrap());
+    regexps.insert(TokenType::OpenBrace, Regex::new(r"\{").unwrap());
+    regexps.insert(TokenType::CloseBrace, Regex::new(r"\}").unwrap());
     regexps.insert(TokenType::Semicolon, Regex::new(r";").unwrap());
     regexps.insert(TokenType::KWReturn, Regex::new(r"return").unwrap());
     regexps.insert(TokenType::KWVoid, Regex::new(r"void").unwrap());
     regexps.insert(TokenType::KWInt, Regex::new(r"int").unwrap());
     regexps.insert(TokenType::Constant, Regex::new(r"([0-9]+)\b").unwrap());
-    regexps.insert(TokenType::Identifier, Regex::new(r"([a-zA-Z_]\w*)\b").unwrap());
+    regexps.insert(
+        TokenType::Identifier,
+        Regex::new(r"([a-zA-Z_]\w*)\b").unwrap(),
+    );
 
     let mut tokens: Vec<Token> = Vec::new();
     while !contents.is_empty() {
@@ -87,18 +91,35 @@ fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
         let mut longest = 0;
         let mut longest_token = Token::default();
         for (token, regexp) in &regexps {
-            if let Some(s) = regexp.find(contents)  && s.len() > longest {
+            if let Some(s) = regexp.find(contents)
+                && s.len() > longest
+            {
                 longest = s.len();
                 // If we matched a constant or ident, fill in the value with the capture, otherwise continue
                 match *token {
-                    TokenType::Constant | TokenType::Identifier => {
-                        let cap = regexp.captures(contents).unwrap().get(0).unwrap();
-                        longest_token = Token{ttype: token.clone(), value: cap.as_str().to_owned()};
+                    TokenType::Identifier => {
+                        for ttype in [TokenType::KWReturn, TokenType::KWVoid, TokenType::KWInt] {
+                            if let Some(kw) = regexps.get(&ttype).unwrap().find(contents) {
+                                longest = kw.len();
+                                longest_token = Token { ttype, value: kw.as_str().to_owned() };
+                                break;
+                            }
+                        }
+                    }
 
+                    TokenType::Constant => {
+                        let cap = regexp.captures(contents).unwrap().get(0).unwrap();
+                        longest_token = Token {
+                            ttype: token.clone(),
+                            value: cap.as_str().to_owned(),
+                        };
                     }
 
                     _ => {
-                        longest_token = Token{ttype: token.clone(), value: "".to_owned()};
+                        longest_token = Token {
+                            ttype: token.clone(),
+                            value: "".to_owned(),
+                        };
                     }
                 }
             }
