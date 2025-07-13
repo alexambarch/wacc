@@ -11,6 +11,10 @@ mod parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
+    /// Print debug messages
+    #[arg(short, long)]
+    debug: bool,
+
     /// Run the lexer, stop before parsing
     #[arg(long)]
     lex: bool,
@@ -29,9 +33,9 @@ struct Args {
 }
 
 fn main() -> Result<()> {
-    logger::init(log::Level::Debug);
-
     let args = Args::parse();
+    logger::init(if args.debug { log::Level::Debug } else { log::Level::Info });
+
     let _early_exit = args.lex || args.parse || args.codegen;
 
     let mut contents = read_file(args.filename)?;
