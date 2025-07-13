@@ -55,7 +55,10 @@ fn main() -> Result<()> {
     let mut contents = read_file(args.filename)?;
     let tokens = tokenize(&mut contents)?;
 
-    println!("Tokens: {:?}", tokens.iter().map(|t| t.value.clone()).collect::<String>());
+    println!(
+        "Tokens: {:?}",
+        tokens.iter().map(|t| t.value.clone()).collect::<String>()
+    );
 
     Ok(())
 }
@@ -80,7 +83,10 @@ fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
     regexps.insert(TokenType::KWVoid, Regex::new(r"void\b").unwrap());
     regexps.insert(TokenType::KWInt, Regex::new(r"int\b").unwrap());
     regexps.insert(TokenType::Constant, Regex::new(r"([0-9]+)\b").unwrap());
-    regexps.insert(TokenType::Comment, Regex::new(r"(?:\/\/.*\n)|(?:\/\*.*\*\/)").unwrap());
+    regexps.insert(
+        TokenType::Comment,
+        Regex::new(r"(?:\/\/.*\n)|(?:\/\*.*\*\/)").unwrap(),
+    );
     regexps.insert(
         TokenType::Identifier,
         Regex::new(r"([a-zA-Z_]\w*)\b").unwrap(),
@@ -107,7 +113,8 @@ fn tokenize(contents: &mut String) -> Result<Vec<Token>> {
                     // Identifiers completely cover the KW regexes
                     TokenType::Identifier => {
                         for ttype in [TokenType::KWReturn, TokenType::KWVoid, TokenType::KWInt] {
-                            if let Some(kw) = regexps.get(&ttype).unwrap().find(fullmatch.as_str()) {
+                            if let Some(kw) = regexps.get(&ttype).unwrap().find(fullmatch.as_str())
+                            {
                                 match_length = kw.len();
                                 longest_token = Token {
                                     ttype,
