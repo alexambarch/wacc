@@ -1,0 +1,8 @@
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.comptests]
+command = "book/test_compiler"
+args = ["target/debug/wacc", "${@}"]
+dependencies = ["build"]
