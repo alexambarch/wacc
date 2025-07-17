@@ -1,5 +1,5 @@
 use anyhow::{Result, bail};
-use ast::ASTNode;
+use ast::Node;
 use log::{debug, info};
 use regex::Regex;
 use std::collections::HashMap;
@@ -36,7 +36,8 @@ pub fn parse(contents: &mut String) -> Result<()> {
     Ok(())
 }
 
-fn generate_ast(tokens: Vec<Token>) -> ASTNode {
+/// Determine whether a program is valid
+fn check(tokens: Vec<Token>) -> Result<bool> {
     todo!();
 }
 
