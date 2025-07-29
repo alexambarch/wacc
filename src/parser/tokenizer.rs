@@ -4,10 +4,8 @@ use regex::Regex;
 use std::collections::HashMap;
 
 /// All possible token types
-#[derive(PartialEq, Eq, Hash, Clone, Default, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum TokenType {
-    #[default]
-    Empty,
     OpenParen,
     CloseParen,
     OpenBrace,
@@ -36,7 +34,7 @@ const TOKENS: [(TokenType, &str); 11] = [
     (TokenType::Comment, r"(?:\/\/.*\n)|(?:\/\*.*\*\/)"),
 ];
 
-#[derive(PartialEq, Eq, Hash, Default, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct Token {
     pub ttype: TokenType,
     pub value: String,
@@ -63,7 +61,7 @@ impl Tokenizer {
             *contents = contents.trim_start().to_owned();
 
             let mut longest = 0;
-            let mut longest_token = Token::default();
+            let mut longest_token: Option<Token> = None;
             for (token, regexp) in &self.exps {
                 let m = regexp.find(contents);
                 if m.is_none() || m.unwrap().start() > 0 {
@@ -77,34 +75,45 @@ impl Tokenizer {
                     match *token {
                         // Identifiers completely cover the KW regexes
                         TokenType::Identifier => {
+                            let mut kw_covered = false;
+                            let cap = regexp.captures(contents).unwrap().get(0).unwrap();
+
                             for ttype in [TokenType::KWReturn, TokenType::KWVoid, TokenType::KWInt]
                             {
                                 if let Some(kw) =
                                     self.exps.get(&ttype).unwrap().find(fullmatch.as_str())
                                 {
+                                    kw_covered = true;
                                     match_length = kw.len();
-                                    longest_token = Token {
+                                    longest_token = Some(Token {
                                         ttype,
                                         value: kw.as_str().to_owned(),
-                                    };
+                                    });
                                     break;
                                 }
+                            }
+
+                            if !kw_covered {
+                                longest_token = Some(Token {
+                                    ttype: token.clone(),
+                                    value: cap.as_str().to_owned(),
+                                });
                             }
                         }
 
                         TokenType::Constant => {
                             let cap = regexp.captures(contents).unwrap().get(0).unwrap();
-                            longest_token = Token {
+                            longest_token = Some(Token {
                                 ttype: token.clone(),
                                 value: cap.as_str().to_owned(),
-                            };
+                            });
                         }
 
                         _ => {
-                            longest_token = Token {
+                            longest_token = Some(Token {
                                 ttype: token.clone(),
                                 value: fullmatch.as_str().to_owned(),
-                            };
+                            });
                         }
                     }
 
@@ -112,11 +121,11 @@ impl Tokenizer {
                 }
             }
 
-            if longest == 0 {
+            if longest == 0 || longest_token.is_none() {
                 bail!("Unable to tokenize :(");
             }
 
-            tokens.push(longest_token.clone());
+            tokens.push(longest_token.unwrap().clone());
             *contents = contents[longest..].trim_end().to_owned();
         }
 
