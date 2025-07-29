@@ -1,4 +1,4 @@
-use log::{Level, Metadata, Record};
+use log::{Level, Log, Metadata, Record};
 
 pub static LOGGER: Logger = Logger {
     log_level: Level::Debug,
@@ -13,7 +13,7 @@ pub fn init(level: Level) {
     log::set_max_level(level.to_level_filter());
 }
 
-impl log::Log for Logger {
+impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= self.log_level
     }

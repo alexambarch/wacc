@@ -4,7 +4,7 @@ use log::{debug, info};
 use std::fmt::{Display, Formatter};
 use tokenizer::{TokenType, Tokenizer};
 
-mod ast;
+pub mod ast;
 mod tokenizer;
 
 #[derive(Debug)]
