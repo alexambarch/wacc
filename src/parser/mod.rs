@@ -1,10 +1,27 @@
 use anyhow::Result;
 use ast::parse_program;
 use log::{debug, info};
-use tokenizer::Tokenizer;
+use std::fmt::{Display, Formatter};
+use tokenizer::{TokenType, Tokenizer};
 
 mod ast;
 mod tokenizer;
+
+#[derive(Debug)]
+struct ParseError {
+    expected: TokenType,
+    got: TokenType,
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_fmt(format_args!(
+            "Parsing error: expected {:?}, got {:?}",
+            self.expected, self.got
+        ))?;
+        Ok(())
+    }
+}
 
 pub fn generate_ast(contents: &mut String, lex_only: bool) -> Result<()> {
     let tokenizer = Tokenizer::new();

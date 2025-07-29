@@ -1,6 +1,12 @@
-use crate::parser::tokenizer::{Token, TokenType};
+use crate::parser::{
+    ParseError,
+    tokenizer::{Token, TokenType},
+};
 use anyhow::{Result, bail};
-use std::{fmt::Display, vec::IntoIter};
+use std::{
+    fmt::{Display, Formatter},
+    vec::IntoIter,
+};
 
 type TokenIterator = IntoIter<Token>;
 
@@ -15,7 +21,7 @@ enum NodeType {
 }
 
 impl Display for NodeType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             NodeType::Program => f.write_str("Program"),
             NodeType::Function => f.write_str("Function"),
@@ -38,24 +44,8 @@ pub struct Node {
 }
 
 impl Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.write_str(format!("{}(\n    {:#?}", self.ntype, self.children).as_str())
-    }
-}
-
-#[derive(Debug)]
-struct ParseError {
-    expected: TokenType,
-    got: TokenType,
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.write_fmt(format_args!(
-            "Parsing error: expected {:?}, got {:?}",
-            self.expected, self.got
-        ))?;
-        Ok(())
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_str(format!("{}({:#?})", self.ntype, self.children).as_str())
     }
 }
 
