@@ -1,6 +1,6 @@
 use anyhow::Result;
 use ast::parse_program;
-use log::info;
+use log::{debug, info};
 use tokenizer::Tokenizer;
 
 mod ast;
@@ -12,8 +12,9 @@ pub fn generate_ast(contents: &mut String, lex_only: bool) -> Result<()> {
     info!("Successfully parsed {} tokens.", tokens.len());
 
     if !lex_only {
-        parse_program(&mut tokens.into_iter())?;
+        let ast = parse_program(&mut tokens.into_iter())?;
         info!("Successfully parsed tokens into AST!");
+        debug!("AST: {:?}", ast);
     }
 
     Ok(())

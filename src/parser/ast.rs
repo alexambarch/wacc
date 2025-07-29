@@ -1,13 +1,11 @@
 use crate::parser::tokenizer::{Token, TokenType};
 use anyhow::{Result, bail};
-use std::vec::IntoIter;
+use std::{fmt::Display, vec::IntoIter};
 
 type TokenIterator = IntoIter<Token>;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 enum NodeType {
-    #[default]
-    Empty,
     Program,
     Function,
     Statement,
@@ -16,25 +14,47 @@ enum NodeType {
     Constant(i32),
 }
 
+impl Display for NodeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            NodeType::Program => f.write_str("Program"),
+            NodeType::Function => f.write_str("Function"),
+            NodeType::Statement => f.write_str("Statement"),
+            NodeType::Expression => f.write_str("Expression"),
+            NodeType::Identifier(name) => f.write_str(&format!("Identifier({})", name)),
+            NodeType::Constant(value) => f.write_str(&format!("Constant({})", value)),
+        }
+    }
+}
+
 /*
- * The Node type should encode multiple possible options
- * Each option is a chain of tokens
- * Each Node
+ * A node has a type and a number of children.
+ * Possible values are encoded in the type
  */
-#[derive(Default)]
+#[derive(Debug)]
 pub struct Node {
     ntype: NodeType,
     children: Vec<Node>,
 }
 
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_str(format!("{}(\n    {:#?}", self.ntype, self.children).as_str())
+    }
+}
+
 #[derive(Debug)]
 struct ParseError {
     expected: TokenType,
+    got: TokenType,
 }
 
-impl std::fmt::Display for ParseError {
+impl Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.write_fmt(format_args!("Parsing error: expected {:?}", self.expected))?;
+        f.write_fmt(format_args!(
+            "Parsing error: expected {:?}, got {:?}",
+            self.expected, self.got
+        ))?;
         Ok(())
     }
 }
@@ -42,6 +62,11 @@ impl std::fmt::Display for ParseError {
 /// A program is a function
 pub fn parse_program(tokens: &mut TokenIterator) -> Result<Node> {
     let func = parse_function(tokens)?;
+
+    if let Some(token) = tokens.next() {
+        bail!("There's some extra junk here: {}", token.value);
+    }
+
     Ok(Node {
         ntype: NodeType::Program,
         children: vec![func],
@@ -94,6 +119,7 @@ fn parse_identifier(tokens: &mut TokenIterator) -> Result<Node> {
             if t.ttype != TokenType::Identifier {
                 bail!(ParseError {
                     expected: TokenType::Identifier,
+                    got: t.ttype
                 });
             }
 
@@ -104,6 +130,7 @@ fn parse_identifier(tokens: &mut TokenIterator) -> Result<Node> {
         }
         None => bail!(ParseError {
             expected: TokenType::Constant,
+            got: TokenType::Empty,
         }),
     }
 }
@@ -115,6 +142,7 @@ fn parse_constant(tokens: &mut TokenIterator) -> Result<Node> {
             if t.ttype != TokenType::Constant {
                 bail!(ParseError {
                     expected: TokenType::Constant,
+                    got: t.ttype
                 });
             }
 
@@ -125,14 +153,26 @@ fn parse_constant(tokens: &mut TokenIterator) -> Result<Node> {
         }
         None => bail!(ParseError {
             expected: TokenType::Constant,
+            got: TokenType::Empty
         }),
     }
 }
 
 /// Consume a token and check it matches what we expect
-fn expect(ttype: TokenType, tokens: &mut TokenIterator) -> Result<bool> {
+fn expect(ttype: TokenType, tokens: &mut TokenIterator) -> Result<()> {
     match tokens.next() {
-        Some(token) => Ok(token.ttype == ttype),
-        None => bail!(ParseError { expected: ttype }),
+        Some(token) => {
+            if token.ttype == ttype {
+                return Ok(());
+            }
+            bail!(ParseError {
+                expected: ttype,
+                got: token.ttype
+            })
+        }
+        None => bail!(ParseError {
+            expected: ttype,
+            got: TokenType::Empty
+        }),
     }
 }

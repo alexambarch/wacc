@@ -17,6 +17,7 @@ pub enum TokenType {
     KWVoid,
     KWReturn,
     Comment,
+    Empty,
 }
 
 /// A constant array of every token type and the regex to parse it
