@@ -40,7 +40,7 @@ fn main() -> Result<()> {
 
     let _early_exit = args.lex || args.parse || args.codegen;
     let mut contents = read_file(args.filename)?;
-    parser::parse(&mut contents)?;
+    parser::generate_ast(&mut contents, args.lex)?;
 
     Ok(())
 }
